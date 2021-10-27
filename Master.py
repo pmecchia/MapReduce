@@ -29,10 +29,10 @@ def task(ssh_command,machines,command=None,localPath=None,distantPath=None):
         try:
             out, err = listproc[i].communicate(timeout=timer)
             code = listproc[i].returncode
-            #if code != 0:
-            print(str(i)+" out: '{}'".format(out))
-            print(str(i)+" err: '{}'".format(err))
-            print(str(i)+" exit: {}".format(code))
+            if code != 0:
+                print(str(i)+" out: '{}'".format(out))
+                print(str(i)+" err: '{}'".format(err))
+                print(str(i)+" exit: {}".format(code))
         except subprocess.TimeoutExpired:
             listproc[i].kill()
             print(str(i)+" timeout")
@@ -64,11 +64,10 @@ def result(machines):
 
 def threads():
 
-    threads_dir=[]
     t_dir0 = threading.Thread(target=task,args=["ssh",ip_list,"mkdir -p /tmp/pmecchia-20/splits",None,None])
     t_dir1 = threading.Thread(target=task,args=["ssh",ip_list,"mkdir -p /tmp/pmecchia-20/maps",None,None])
-    t_split0 = threading.Thread(target=task,args=["scp",ip_list,"split","./S","/tmp/pmecchia-20/splits"])
-    t_split1 = threading.Thread(target=task,args=["ssh",ip_list,"python3 /tmp/pmecchia-20/Slave.py 0 /tmp/pmecchia-20/splits/S*.txt",None,None])
+    t_split = threading.Thread(target=task,args=["scp",ip_list,"split","./S","/tmp/pmecchia-20/splits"])
+    t_map = threading.Thread(target=task,args=["ssh",ip_list,"python3 /tmp/pmecchia-20/Slave.py 0 /tmp/pmecchia-20/splits/S*.txt",None,None])
 
     t_machines = threading.Thread(target=task,args=["scp",ip_list,None,"./list_ip.txt","/tmp/pmecchia-20/machines.txt"])
 
@@ -80,62 +79,17 @@ def threads():
     t_dir3 = threading.Thread(target=task,args=["ssh",ip_list,"mkdir -p /tmp/pmecchia-20/reduces",None,None])
 
     t_reduce = threading.Thread(target=task,args=["ssh",ip_list,"python3 /tmp/pmecchia-20/Slave.py 2" ,None,None])
-    """
-    threads_dir.extend([t_dir0,t_dir1,t_dir2,t_dir3,t_dir4,t_machines])
-    for idx,i in enumerate(threads_dir):
+
+    threads_list=[t_dir0,t_dir1,t_split,t_dir2,t_dir3,t_dir4,t_machines,t_map,t_shuffle,t_reduce]
+    threads_list_string=['mkdir split','mkdir map','scp split','mkdir shuffles','mkdir shufflesreceived','mkdir reduces','scp machines','maping','shuffling','reducing']
+
+    for idx,i in enumerate(threads_list):
+        start=time.process_time()
         i.start()
-        print(idx)
-    """
-    t_dir0.start()
-    t_dir1.start()
-    t_dir2.start()
-    t_dir3.start()
-    t_dir4.start()
-    t_machines.start()
+        i.join()
+        finish=time.process_time()-start
+        print(threads_list_string[idx]+': '+str(finish))
 
-    t_dir0.join()
-    t_dir1.join()
-    t_dir2.join()
-    t_dir3.join()
-    t_dir4.join()
-    t_machines.join()
-
-    print("MKDIR FINISHED")
-
-
-    t_split0.start()
-    t_split0.join()
-
-    print("SPLIT FINISHED")
-    time.sleep(1)
-    start=time.process_time()
-    t_split1.start()
-    t_split1.join()
-    finish=time.process_time()-start
-    print("MAP FINISHED in:",finish)
-    start=time.process_time()
-    t_shuffle.start()
-    t_shuffle.join()
-    finish=time.process_time()-start
-    print("SHUFFLE FINISHED in:",finish)
-    start=time.process_time()
-    t_reduce.start()
-    t_reduce.join()
-    finish=time.process_time()-start
-    print("REDUCE FINISHED in:",finish)
-
-
-def hashing(string,hostname):
-    #hash_code_list=[]
-    encode_string=string.encode('utf-8')
-    hash_code = str(int.from_bytes(hashlib.sha256(encode_string).digest()[:4], 'little'))
-    #hash_code_list.append(str(hash_code))
-    output_file="./"+str(hash_code)+"-"+str(hostname)+".txt"
-    f = open(output_file, "a")
-    f.write(string)
-    f.close()
-    return hash_code
-import hashlib
 
 
 if __name__ == '__main__':
@@ -145,8 +99,4 @@ if __name__ == '__main__':
     #multiple_files("exemple.txt",len(ip_list))
     multiple_files("deontologie_police_nationale.txt",len(ip_list))
     threads()
-
     result(ip_list)
-
-
-    #UTLISER MULTIPROCESSING

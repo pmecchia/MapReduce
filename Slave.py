@@ -34,18 +34,17 @@ def task(ssh_command,machines,command=None,localPath=None,distantPath=None):
             listproc[i].kill()
             print(str(i)+" timeout")
 
-def hashing(input_file):
+def hashing(input_file,ip_list):
     hash_dic={}
     file=open(input_file,'r').readlines()
-    #print("L:",l)
-    #with open(input_file,'r') as file: # opening the text file
     for line in file: # reading each line
         encode_string=line.encode('utf-8')
         hash_code = str(int.from_bytes(hashlib.sha256(encode_string).digest()[:4], 'little'))
-        if hash_code in hash_dic:
-          hash_dic[hash_code].append(line)
+        receiver=ip_list[int(hash_code)%len(ip_list)]
+        if receiver in hash_dic:
+          hash_dic[receiver].append(line)
         else:
-          hash_dic[hash_code] = [line]
+          hash_dic[receiver] = [line]
     return hash_dic
 
 
@@ -61,7 +60,6 @@ hostname=socket.gethostname()
 ################################################################################
 
 if int(sys.argv[1])==0:
-    #print("11111111111111111111111")
     new_file=[]
     input_file = [f for f in glob.glob("/tmp/pmecchia-20/splits/*.txt")][0]
     number=re.search(r"[0-9]+",input_file.split("/")[-1]).group()
@@ -81,16 +79,14 @@ if int(sys.argv[1])==0:
 
 elif int(sys.argv[1])==1:
 
-
-
-    hash_dic=hashing(input_file)
+    hash_dic=hashing(input_file,ip_list)
+    #print(hash_dic)
     for key, value in hash_dic.items():
-        output_file="/tmp/pmecchia-20/shuffles/"+str(key)+"-"+str(hostname)+".txt"
+        output_file="/tmp/pmecchia-20/shuffles/to_"+str(key)+"_from_"+str(hostname)+".txt"
         f = open(output_file, "a")
         f.write(''.join(value))
         f.close()
-        receiver=ip_list[int(key)%len(ip_list)]
-        task("scp",localPath=output_file,distantPath="/tmp/pmecchia-20/shufflesreceived/",machines=[receiver])
+        task("scp",localPath=output_file,distantPath="/tmp/pmecchia-20/shufflesreceived/",machines=[str(key)])
 
 
 
@@ -103,14 +99,15 @@ elif int(sys.argv[1])==2:
     shuffle_files = [f for f in glob.glob("/tmp/pmecchia-20/shufflesreceived/*.txt")]
 
     for i in shuffle_files:
-        hash_code=i.split("/")[4].split("-")[0]
-        with open(i,'r') as fp:
-            wordlist = [line.split(None, 1)[0] for line in fp]
-            lines = len(wordlist)
-            reduces_dic[hash_code+"/"+wordlist[0]]=reduces_dic.get(hash_code+"/"+wordlist[0],0)+int(lines)
-            fp.close()
-    for items in reduces_dic.items():
-        key_info=items[0].split("/")
-        f=open("/tmp/pmecchia-20/reduces/"+key_info[0]+".txt","a")
-        f.write(key_info[1]+" "+str(items[1]))
-        f.close()
+        lines=open(i,'r').readlines()
+        for line in lines:
+            word=str(line.split()[0])
+            if word in reduces_dic:
+              reduces_dic[word]=reduces_dic.get(word)+1
+            else:
+              reduces_dic[word] = 1
+    reduce_file=open("/tmp/pmecchia-20/reduces/"+hostname+".txt","a")
+
+    for key,value in reduces_dic.items():
+        reduce_file.write(key+" "+str(value)+"\n")
+    reduce_file.close()
