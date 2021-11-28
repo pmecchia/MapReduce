@@ -1,12 +1,12 @@
 import subprocess
 import os
 
-file = open('list_ip.txt', 'r')
+file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
 ip_list = file.read().splitlines()
 
 def ssh(command,machines):
     listproc = []
-    timer=5
+    #timer=5
     login="pmecchia-20"
 
     for ip in machines:
@@ -15,11 +15,12 @@ def ssh(command,machines):
 
     for i in range(len(listproc)):
         try:
-            out, err = listproc[i].communicate(timeout=timer)
+            out, err = listproc[i].communicate()
             code = listproc[i].returncode
-            print(str(i)+" out: '{}'".format(out))
-            print(str(i)+" err: '{}'".format(err))
-            print(str(i)+" exit: {}".format(code))
+            if code !=0:
+                print(str(i)+" out: '{}'".format(out))
+                print(str(i)+" err: '{}'".format(err))
+                print(str(i)+" exit: {}".format(code))
         except subprocess.TimeoutExpired:
             listproc[i].kill()
             print(str(i)+" timeout")
@@ -31,8 +32,10 @@ def ssh(command,machines):
 
 ip_list=ssh("rm -rf /tmp/pmecchia-20/*",ip_list)
 ssh("ls /tmp/pmecchia-20",ip_list)
-os.system("rm -rf reduces/*")
-os.remove("result.txt")
+os.system("rm -rf INF727_Systemes_repartis/reduces/*")
+os.system("rm -rf INF727_Systemes_repartis/input_splits/*")
+if os.path.exists("INF727_Systemes_repartis/result.txt"):
+    os.remove("INF727_Systemes_repartis/result.txt")
 
 
 #ssh("hostname")
