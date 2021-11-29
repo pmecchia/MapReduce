@@ -1,7 +1,8 @@
 import subprocess
+import sys
+import re
 
-file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
-ip_list = file.read().splitlines()
+
 
 def ssh(command,machines):
     listproc = []
@@ -46,6 +47,25 @@ def scp(localPath,distantPath,machines):
         except subprocess.TimeoutExpired:
             listproc[i].kill()
             print(str(i)+" timeout")
+
+
+#file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
+#ip_list = file.read().splitlines()
+nbMachines = int(re.findall(r'\d+',sys.argv[1])[0])
+
+print(nbMachines)
+
+ip_list=[]
+start=5
+with open("INF727_Systemes_repartis/list_ip.txt", "w") as f:
+    for i in range(start, start+nbMachines + 1):
+        machine=f"tp-4b01-{i:02d}"
+        ip_list.append(machine)
+        if i < start+nbMachines:
+            f.write(machine+"\n")
+        else:
+            f.write(machine)
+
 
 ip_list=ssh("mkdir -p /tmp/pmecchia-20",ip_list)
 scp("INF727_Systemes_repartis/Slave.py", "/tmp/pmecchia-20",ip_list)

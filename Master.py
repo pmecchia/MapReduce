@@ -3,16 +3,15 @@ import threading
 import time
 import glob
 import os
+import sys
 import codecs
 import re
 
-file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
-ip_list = file.read().splitlines()
+
 
 
 def task(ssh_command,machines,command=None,localPath=None,distantPath=None):
     listproc = []
-    #timer=200
     login="pmecchia-20"
     for idx,ip in enumerate(machines):
         if ssh_command == "scp":
@@ -75,24 +74,30 @@ def final_dict():
     with open("INF727_Systemes_repartis/result.txt", "a") as f:
         print(final_dict, file=f)
 
+def word_count_local(filename):
+    file= open(filename, "r", encoding='utf-8')
+    words_dict={}
+    for line in file:
+        words=line.split()
+        for word in words:
+            #word=word.lower()
+            if word not in words_dict:
+                words_dict[word]=1
+            else:
+                words_dict[word]+=1
+    file.close()
+    final_dict = dict(sorted(words_dict.items(), key=lambda item: item[1], reverse=True))
+    with open("INF727_Systemes_repartis/result_static.txt", "a") as f:
+        print(final_dict, file=f)
 
-
-if __name__ == '__main__':
-    dir_reduces_exist=os.path.exists('INF727_Systemes_repartis/reduces')
-    dir_split_exist = os.path.exists('INF727_Systemes_repartis/input_splits')
-    if not dir_reduces_exist:
-        os.mkdir('INF727_Systemes_repartis/reduces') #create reduces directory
-    if not dir_split_exist:
-        os.mkdir('INF727_Systemes_repartis/input_splits')
-
-    start1=time.time()
-    multiple_files("INF727_Systemes_repartis/amazon_file-1.txt", len(ip_list))
+def word_count_distributed(filename):
+    start1 = time.time()
+    multiple_files(filename, len(ip_list))
     finish = time.time() - start1
     print('SPLIT INPUT COMPLETED IN: ' + str(finish))
-
     start = time.time()
-    task("ssh",ip_list,"mkdir -p /tmp/pmecchia-20/splits",None,None)
-    task("ssh",ip_list,"mkdir -p /tmp/pmecchia-20/maps",None,None)
+    task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/splits", None, None)
+    task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/maps", None, None)
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/shuffles", None, None)
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/shufflesreceived", None, None)
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/reduces", None, None)
@@ -105,7 +110,7 @@ if __name__ == '__main__':
     print('MACHINE LIST SENT IN: ' + str(finish))
 
     start = time.time()
-    task("scp",ip_list,"split","INF727_Systemes_repartis/input_splits/S","/tmp/pmecchia-20/splits")
+    task("scp", ip_list, "split", "INF727_Systemes_repartis/input_splits/S", "/tmp/pmecchia-20/splits")
     finish = time.time() - start
     print('SPLIT COMPLETED IN: ' + str(finish))
 
@@ -115,12 +120,12 @@ if __name__ == '__main__':
     print('MAP COMPLETED IN: ' + str(finish))
 
     start = time.time()
-    task("ssh",ip_list,"python3 /tmp/pmecchia-20/Slave.py 1 /tmp/pmecchia-20/maps/UM*.txt",None,None)
+    task("ssh", ip_list, "python3 /tmp/pmecchia-20/Slave.py 1 /tmp/pmecchia-20/maps/UM*.txt", None, None)
     finish = time.time() - start
     print('SHUFFLE COMPLETED IN: ' + str(finish))
 
     start = time.time()
-    task("ssh",ip_list,"python3 /tmp/pmecchia-20/Slave.py 2" ,None,None)
+    task("ssh", ip_list, "python3 /tmp/pmecchia-20/Slave.py 2", None, None)
     finish = time.time() - start
     print('REDUCE COMPLETED IN: ' + str(finish))
 
@@ -129,5 +134,27 @@ if __name__ == '__main__':
     finish = time.time() - start
     print('RESULT IN: ' + str(finish))
 
-    finish = time.time() - start1
+
+if __name__ == '__main__':
+
+    filename = sys.argv[1]
+    option = sys.argv[2]
+
+    dir_reduces_exist=os.path.exists('INF727_Systemes_repartis/reduces')
+    dir_split_exist = os.path.exists('INF727_Systemes_repartis/input_splits')
+    if not dir_reduces_exist:
+        os.mkdir('INF727_Systemes_repartis/reduces') #create reduces directory
+    if not dir_split_exist:
+        os.mkdir('INF727_Systemes_repartis/input_splits')
+
+
+    if option=="--local":
+        start = time.time()
+        word_count_local(filename)
+    elif option=="--distributed":
+        file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
+        ip_list = file.read().splitlines()
+        start=time.time()
+        word_count_distributed(filename)
+    finish = time.time() - start
     print('TOTAL COMPLETED IN: ' + str(finish))
