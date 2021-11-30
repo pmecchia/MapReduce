@@ -1,13 +1,8 @@
 import subprocess
-import threading
 import time
 import glob
 import os
 import sys
-import codecs
-import re
-
-
 
 
 def task(ssh_command,machines,command=None,localPath=None,distantPath=None):
@@ -62,17 +57,6 @@ def result(machines):
     with open("INF727_Systemes_repartis/result.txt", "a") as f:
         print(final_dict, file=f)
 
-def final_dict():
-    final_dict={}
-    for reduce in glob.glob("INF727_Systemes_repartis/reduces/*.txt"):
-        file =open(reduce, "r",encoding='utf-8')
-        contents = file.read()
-        dictionary = eval(contents)
-        file.close()
-        final_dict.update(dictionary)
-    final_dict=dict(sorted(final_dict.items(), key=lambda item: item[1],reverse=True)) #sort final dict
-    with open("INF727_Systemes_repartis/result.txt", "a") as f:
-        print(final_dict, file=f)
 
 def word_count_local(filename):
     file= open(filename, "r", encoding='utf-8')

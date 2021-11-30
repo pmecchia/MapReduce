@@ -1,8 +1,7 @@
 import subprocess
 import os
 
-file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
-ip_list = file.read().splitlines()
+
 
 def ssh(command,machines):
     listproc = []
@@ -28,14 +27,15 @@ def ssh(command,machines):
 
     return ip_list
 
+if __name__ == '__main__':
+
+    file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
+    ip_list = file.read().splitlines()
+    ip_list=ssh("rm -rf /tmp/pmecchia-20/*",ip_list)
+    ssh("ls /tmp/pmecchia-20",ip_list)
+    os.system("rm -rf INF727_Systemes_repartis/reduces/*")
+    os.system("rm -rf INF727_Systemes_repartis/input_splits/*")
+    if os.path.exists("INF727_Systemes_repartis/result.txt"):
+        os.remove("INF727_Systemes_repartis/result.txt")
 
 
-ip_list=ssh("rm -rf /tmp/pmecchia-20/*",ip_list)
-ssh("ls /tmp/pmecchia-20",ip_list)
-os.system("rm -rf INF727_Systemes_repartis/reduces/*")
-os.system("rm -rf INF727_Systemes_repartis/input_splits/*")
-if os.path.exists("INF727_Systemes_repartis/result.txt"):
-    os.remove("INF727_Systemes_repartis/result.txt")
-
-
-#ssh("hostname")
