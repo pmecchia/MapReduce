@@ -8,25 +8,29 @@ def ssh(command,machines):
     listproc = []
     #timer=5
     login="pmecchia-20"
-
+    delete_list=[]
     for ip in machines:
         proc = subprocess.Popen(["ssh",login+"@"+ip,command],stdin=subprocess.PIPE, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
         listproc.append(proc)
 
     for i in range(len(listproc)):
         try:
-            out, err = listproc[i].communicate()
+            out, err = listproc[i].communicate(timeout=10)
             code = listproc[i].returncode
             if code!=0:
                 print(str(i)+" out: '{}'".format(out))
                 print(str(i)+" err: '{}'".format(err))
                 print(str(i)+" exit: {}".format(code))
+                if code==255: ## nodename or servname not known
+                    delete_list.append(i)
         except subprocess.TimeoutExpired:
             listproc[i].kill()
             print(str(i)+" timeout")
-            del ip_list[i]
-
-    return ip_list
+            print(f"{machines[i]} deleted from list")
+            del machines[i]
+    for i in delete_list:
+        del machines[i]
+    return machines
 
 def scp(localPath,distantPath,machines):
     listproc = []
@@ -49,27 +53,23 @@ def scp(localPath,distantPath,machines):
             print(str(i)+" timeout")
 
 
-#file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
-#ip_list = file.read().splitlines()
-nbMachines = int(re.findall(r'\d+',sys.argv[1])[0])
 
-print(nbMachines)
+if __name__ == '__main__':
+    nbMachines = int(re.findall(r'\d+',sys.argv[1])[0])
+    ip_list=[]
+    for i in range(1,nbMachines + 1):
+            machine=f"tp-4b01-{i:02d}"
+            ip_list.append(machine)
+    ip_list=ssh("hostname",ip_list) #keep only working machines
 
-ip_list=[]
-start=5
-with open("INF727_Systemes_repartis/list_ip.txt", "w") as f:
-    for i in range(start, start+nbMachines + 1):
-        machine=f"tp-4b01-{i:02d}"
-        ip_list.append(machine)
-        if i < start+nbMachines:
-            f.write(machine+"\n")
-        else:
-            f.write(machine)
-
-
-ip_list=ssh("mkdir -p /tmp/pmecchia-20",ip_list)
-scp("INF727_Systemes_repartis/Slave.py", "/tmp/pmecchia-20",ip_list)
-ssh("ls /tmp/pmecchia-20",ip_list)
+    with open("INF727_Systemes_repartis/list_ip.txt", "w") as f:
+        for index,machine in enumerate(ip_list):
+            if index < len(ip_list):
+                f.write(machine+"\n")
+            else:
+                f.write(machine)
 
 
-#ssh("hostname")
+
+    ip_list=ssh("mkdir -p /tmp/pmecchia-20",ip_list)
+    scp("INF727_Systemes_repartis/Slave.py", "/tmp/pmecchia-20",ip_list)
