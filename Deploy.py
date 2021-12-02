@@ -64,12 +64,16 @@ if __name__ == '__main__':
 
     with open("INF727_Systemes_repartis/list_ip.txt", "w") as f:
         for index,machine in enumerate(ip_list):
-            if index < len(ip_list):
+            #print(len(ip_list))
+            if index < len(ip_list)-1:
                 f.write(machine+"\n")
             else:
                 f.write(machine)
 
 
 
-    ip_list=ssh("mkdir -p /tmp/pmecchia-20",ip_list)
+    ssh("mkdir -p /tmp/pmecchia-20",ip_list)
     scp("INF727_Systemes_repartis/Slave.py", "/tmp/pmecchia-20",ip_list)
+    scp("INF727_Systemes_repartis/list_ip.txt", "/tmp/pmecchia-20/machines.txt", ip_list)
+    #task("scp", ip_list, None, "INF727_Systemes_repartis/list_ip.txt", "/tmp/pmecchia-20/machines.txt")
+

@@ -45,7 +45,13 @@ def multiple_files(input_file,nb_files):
             file.close()
 
 def result(machines):
+    start = time.time()
     task("scp",machines,"result","/tmp/pmecchia-20/reduces/*.txt","INF727_Systemes_repartis/reduces/")
+    finish = time.time() - start
+    #print('REDUCE RECEIVED IN: ' + str(finish))
+    print(finish)
+
+    start = time.time()
     final_dict = {}
     for reduce in glob.glob("INF727_Systemes_repartis/reduces/*.txt"):
         file = open(reduce, "r", encoding='utf-8')
@@ -56,7 +62,9 @@ def result(machines):
     final_dict = dict(sorted(final_dict.items(), key=lambda item: item[1], reverse=True))  # sort final dict
     with open("INF727_Systemes_repartis/result.txt", "a") as f:
         print(final_dict, file=f)
-
+    finish = time.time() - start
+    #print('RESULT FILE IN: ' + str(finish))
+    print(finish)
 
 def word_count_local(filename):
     file= open(filename, "r", encoding='utf-8')
@@ -78,7 +86,8 @@ def word_count_distributed(filename):
     start1 = time.time()
     multiple_files(filename, len(ip_list))
     finish = time.time() - start1
-    print('SPLIT INPUT COMPLETED IN: ' + str(finish))
+    #print('SPLIT INPUT COMPLETED IN: ' + str(finish))
+    print(finish)
     start = time.time()
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/splits", None, None)
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/maps", None, None)
@@ -86,37 +95,42 @@ def word_count_distributed(filename):
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/shufflesreceived", None, None)
     task("ssh", ip_list, "mkdir -p /tmp/pmecchia-20/reduces", None, None)
     finish = time.time() - start
-    print('ALL MKDIR COMPLETED IN: ' + str(finish))
-
-    start = time.time()
-    task("scp", ip_list, None, "INF727_Systemes_repartis/list_ip.txt", "/tmp/pmecchia-20/machines.txt")
-    finish = time.time() - start
-    print('MACHINE LIST SENT IN: ' + str(finish))
+    #print('ALL MKDIR COMPLETED IN: ' + str(finish))
+    print(finish)
+#
+    #start = time.time()
+    #task("scp", ip_list, None, "INF727_Systemes_repartis/list_ip.txt", "/tmp/pmecchia-20/machines.txt")
+    #finish = time.time() - start
+    #print('MACHINE LIST SENT IN: ' + str(finish))
 
     start = time.time()
     task("scp", ip_list, "split", "INF727_Systemes_repartis/input_splits/S", "/tmp/pmecchia-20/splits")
     finish = time.time() - start
-    print('SPLIT COMPLETED IN: ' + str(finish))
+    #print('SPLIT COMPLETED IN: ' + str(finish))
+    print(finish)
 
     start = time.time()
     task("ssh", ip_list, "python3 /tmp/pmecchia-20/Slave.py 0 /tmp/pmecchia-20/splits/S*.txt", None, None)
     finish = time.time() - start
-    print('MAP COMPLETED IN: ' + str(finish))
+    #print('MAP COMPLETED IN: ' + str(finish))
+    print(finish)
 
     start = time.time()
     task("ssh", ip_list, "python3 /tmp/pmecchia-20/Slave.py 1 /tmp/pmecchia-20/maps/UM*.txt", None, None)
     finish = time.time() - start
-    print('SHUFFLE COMPLETED IN: ' + str(finish))
+    #print('SHUFFLE COMPLETED IN: ' + str(finish))
+    print(finish)
 
     start = time.time()
     task("ssh", ip_list, "python3 /tmp/pmecchia-20/Slave.py 2", None, None)
     finish = time.time() - start
-    print('REDUCE COMPLETED IN: ' + str(finish))
-
-    start = time.time()
+    #print('REDUCE COMPLETED IN: ' + str(finish))
+    print(finish)
+#
+    #start = time.time()
     result(ip_list)
-    finish = time.time() - start
-    print('RESULT IN: ' + str(finish))
+    #finish = time.time() - start
+    #print('RESULT IN: ' + str(finish))
 
 
 if __name__ == '__main__':
@@ -141,4 +155,5 @@ if __name__ == '__main__':
         start=time.time()
         word_count_distributed(filename)
     finish = time.time() - start
-    print('TOTAL COMPLETED IN: ' + str(finish))
+    #print('TOTAL COMPLETED Ifhyfbhj: ' + str(finish))
+    print(finish)
