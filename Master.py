@@ -39,28 +39,28 @@ def multiple_files(input_file,nb_files):
         lines = file.readlines()
     size=len(lines)/nb_files
     for i in range(nb_files):
-        with open("INF727_Systemes_repartis/input_splits/S"+str(i)+".txt",'w',encoding='utf-8') as file:
+        with open("input_splits/S"+str(i)+".txt",'w',encoding='utf-8') as file:
             for line in lines[int(i*size):int((i+1)*size)]:
                 file.write(line)
             file.close()
 
 def result(machines):
     start = time.time()
-    task("scp",machines,"result","/tmp/pmecchia-20/reduces/*.txt","INF727_Systemes_repartis/reduces/")
+    task("scp",machines,"result","/tmp/pmecchia-20/reduces/*.txt","reduces/")
     finish = time.time() - start
     #print('REDUCE RECEIVED IN: ' + str(finish))
     print(finish)
 
     start = time.time()
     final_dict = {}
-    for reduce in glob.glob("INF727_Systemes_repartis/reduces/*.txt"):
+    for reduce in glob.glob("reduces/*.txt"):
         file = open(reduce, "r", encoding='utf-8')
         contents = file.read()
         dictionary = eval(contents)
         file.close()
         final_dict.update(dictionary)
     final_dict = dict(sorted(final_dict.items(), key=lambda item: item[1], reverse=True))  # sort final dict
-    with open("INF727_Systemes_repartis/result.txt", "a") as f:
+    with open("result.txt", "a") as f:
         print(final_dict, file=f)
     finish = time.time() - start
     #print('RESULT FILE IN: ' + str(finish))
@@ -79,7 +79,7 @@ def word_count_local(filename):
                 words_dict[word]+=1
     file.close()
     final_dict = dict(sorted(words_dict.items(), key=lambda item: item[1], reverse=True))
-    with open("INF727_Systemes_repartis/result_static.txt", "a") as f:
+    with open("result_static.txt", "w") as f:
         print(final_dict, file=f)
 
 def word_count_distributed(filename):
@@ -97,14 +97,9 @@ def word_count_distributed(filename):
     finish = time.time() - start
     #print('ALL MKDIR COMPLETED IN: ' + str(finish))
     print(finish)
-#
-    #start = time.time()
-    #task("scp", ip_list, None, "INF727_Systemes_repartis/list_ip.txt", "/tmp/pmecchia-20/machines.txt")
-    #finish = time.time() - start
-    #print('MACHINE LIST SENT IN: ' + str(finish))
 
     start = time.time()
-    task("scp", ip_list, "split", "INF727_Systemes_repartis/input_splits/S", "/tmp/pmecchia-20/splits")
+    task("scp", ip_list, "split", "input_splits/S", "/tmp/pmecchia-20/splits")
     finish = time.time() - start
     #print('SPLIT COMPLETED IN: ' + str(finish))
     print(finish)
@@ -132,28 +127,51 @@ def word_count_distributed(filename):
     #finish = time.time() - start
     #print('RESULT IN: ' + str(finish))
 
+    check_result()
+
+def check_result():
+
+    ##get static values
+    static_dict={}
+    distrib_dict={}
+    file = open("result_static.txt", "r", encoding='utf-8')
+    contents = file.read()
+    static_res= eval(contents)
+    file.close()
+    static_dict.update(static_res)
+
+    #get distributed values
+    file = open("result.txt", "r", encoding='utf-8')
+    contents = file.read()
+    static_res= eval(contents)
+    file.close()
+    distrib_dict.update(static_res)
+    if list(static_dict.values())[:10]==list(distrib_dict.values())[:10]: ## check 10 first values
+        print(1)
+    else:
+        print(0)
 
 if __name__ == '__main__':
 
     filename = sys.argv[1]
     option = sys.argv[2]
 
-    dir_reduces_exist=os.path.exists('INF727_Systemes_repartis/reduces')
-    dir_split_exist = os.path.exists('INF727_Systemes_repartis/input_splits')
+    dir_reduces_exist=os.path.exists('reduces')
+    dir_split_exist = os.path.exists('input_splits')
     if not dir_reduces_exist:
-        os.mkdir('INF727_Systemes_repartis/reduces') #create reduces directory
+        os.mkdir('reduces') #create reduces directory
     if not dir_split_exist:
-        os.mkdir('INF727_Systemes_repartis/input_splits')
+        os.mkdir('input_splits')
 
 
     if option=="--local":
         start = time.time()
         word_count_local(filename)
     elif option=="--distributed":
-        file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
+        file = open('list_ip.txt', 'r')
         ip_list = file.read().splitlines()
         start=time.time()
         word_count_distributed(filename)
     finish = time.time() - start
-    #print('TOTAL COMPLETED Ifhyfbhj: ' + str(finish))
+    #print('TOTAL COMPLETED : ' + str(finish))
     print(finish)
