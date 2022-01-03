@@ -29,13 +29,13 @@ def ssh(command,machines):
 
 if __name__ == '__main__':
 
-    file = open('INF727_Systemes_repartis/list_ip.txt', 'r')
+    file = open('list_ip.txt', 'r')
     ip_list = file.read().splitlines()
     ip_list=ssh("rm -rf /tmp/pmecchia-20/*",ip_list)
     ssh("ls /tmp/pmecchia-20",ip_list)
-    os.system("rm -rf INF727_Systemes_repartis/reduces/*")
-    os.system("rm -rf INF727_Systemes_repartis/input_splits/*")
-    if os.path.exists("INF727_Systemes_repartis/result.txt"):
-        os.remove("INF727_Systemes_repartis/result.txt")
+    os.system("rm -rf reduces/*")
+    os.system("rm -rf input_splits/*")
+    if os.path.exists("result.txt"):
+        os.remove("result.txt")
 
 
